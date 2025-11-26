@@ -1,0 +1,25 @@
+vendor_id: 4489
+product_id: 34960
+orientation: normal
+rows: 2
+columns: 3
+knobs: 1
+led:
+  type: solid
+  color:
+    - 0
+    - 120
+    - 255
+  brightness: 100
+layers:
+  - buttons:
+      - - prev
+        - play
+        - next
+      - - left
+        - ctrl-shift-K
+        - right
+    knobs:
+      - ccw: volumedown
+        press: mute
+        cw: volumeup

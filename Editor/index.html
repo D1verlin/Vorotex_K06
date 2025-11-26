@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vorotex Ultimate Configurator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: 60px 1fr;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .brand { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 1px; display: flex; gap: 10px; align-items: center; }
+        .brand i { font-size: 24px; }
+
+        .toolbar { display: flex; gap: 10px; }
+
+        .btn {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+        .btn-primary:hover { background: #2563eb; color: white; box-shadow: 0 0 15px var(--accent-glow); }
+
+        /* --- MAIN LAYOUT --- */
+        .workspace {
+            display: grid;
+            grid-template-columns: 350px 1fr 350px; /* Left Panel | Visualizer | Right Panel */
+            height: 100%;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            background: rgba(30, 41, 59, 0.5);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-right { border-left: 1px solid var(--border); border-right: none; background: var(--bg-panel); }
+
+        .panel-header {
+            padding: 15px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-panel);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* --- CENTER STAGE (KEYBOARD) --- */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            position: relative;
+        }
+
+        .device-case {
+            background: #000;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.8),
+                inset 0 0 0 2px #333;
+            display: flex;
+            gap: 30px;
+            transform: perspective(1000px) rotateX(10deg);
+            transition: transform 0.5s;
+        }
+        .device-case:hover { transform: perspective(1000px) rotateX(0deg) scale(1.02); }
+
+        .keys-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(2, 80px);
+            gap: 12px;
+        }
+
+        .key-cap {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 12px;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+            box-shadow: 0 4px 0 #000;
+        }
+        .key-cap:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+        .key-cap.selected { 
+            border-color: var(--accent); 
+            box-shadow: 0 0 20px var(--accent-glow), 0 4px 0 #000;
+            z-index: 2;
+        }
+        
+        .key-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .key-value { font-size: 14px; font-weight: bold; color: white; text-align: center; word-break: break-word; padding: 0 5px; }
+
+        /* KNOB */
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .knob {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #333, #555, #333);
+            border: 2px solid #222;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .knob::after { content:''; width: 4px; height: 20px; background: var(--accent); position: absolute; top: 5px; border-radius: 2px; }
+        
+        .knob-sub-btn {
+            background: #222;
+            color: #888;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            border: 1px solid #333;
+            width: 100%;
+            text-align: center;
+        }
+        .knob-sub-btn:hover { background: #333; color: white; }
+        .knob-sub-btn.selected { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* --- LIBRARY (LEFT PANEL) --- */
+        .lib-content { padding: 10px; overflow-y: auto; height: 100%; }
+        
+        .category { margin-bottom: 15px; }
+        .category-title { 
+            font-size: 12px; color: var(--accent); font-weight: bold; 
+            margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+        }
+        
+        .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+        
+        .action-chip {
+            background: #2d3748;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .action-chip:hover { background: #4a5568; border-color: var(--text-muted); }
+        .action-chip small { display: block; font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+        /* --- PROPERTIES (RIGHT PANEL) --- */
+        .prop-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .input-group label { display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted); }
+        .input-group input { 
+            width: 100%; background: var(--bg-dark); border: 1px solid var(--border); 
+            color: white; padding: 10px; border-radius: 6px; outline: none;
+        }
+        .input-group input:focus { border-color: var(--accent); }
+
+        .layer-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .layer-dot {
+            width: 12px; height: 12px; border-radius: 50%; background: #333; cursor: pointer;
+            border: 2px solid transparent; transition: 0.3s;
+        }
+        .layer-dot.active { background: var(--accent); transform: scale(1.2); box-shadow: 0 0 10px var(--accent); }
+
+        /* Complex Action Builder */
+        .builder-box { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .builder-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .range-val { font-size: 10px; float: right; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <i class="fas fa-gamepad"></i>
+            VOROTEX <span style="font-weight:300; opacity:0.7">ULTIMATE</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn" onclick="importConfig()"><i class="fas fa-upload"></i> Открыть</button>
+            <button class="btn btn-primary" onclick="downloadConfig()"><i class="fas fa-download"></i> Скачать YAML</button>
+            <input type="file" id="fileInput" hidden onchange="handleFileLoad(this)">
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="panel">
+            <div class="panel-header"><i class="fas fa-book"></i> Библиотека команд</div>
+            <div class="lib-content">
+                
+                <div class="category">
+                    <div class="category-title"><i class="fas fa-music"></i> Мультимедиа</div>
+                    <div class="chip-grid">
+                        <div class="action-chip" onclick="applyAction('play')">Play/Pause</div>
+                        <div class="action-chip" onclick="applyAction('prev')">Назад</div>
+                        <div class="action-chip" onclick="applyAction('next')">Вперед</div>
+                        <div class="action-chip" onclick="applyAction('volumedown')">Громкость -</div>
+                        <div class="action-chip" onclick="applyAction('volumeup')">Громкость +</div>
+                        <div class="action-chip" onclick="applyAction('mute')">Mute</div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title"><i class="fas fa-keyboard"></i> F-Клавиши (для биндов)</div>
+                    <div class="chip-grid">
+                        <div class="action-chip" onclick="applyAction('f13')">F13</div>
+                        <div class="action-chip" onclick="applyAction('f14')">F14</div>
+                        <div class="action-chip" onclick="applyAction('f15')">F15</div>
+                        <div class="action-chip" onclick="applyAction('f16')">F16</div>
+                        <div class="action-chip" onclick="applyAction('f17')">F17</div>
+                        <div class="action-chip" onclick="applyAction('f18')">F18</div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title"><i class="fas fa-edit"></i> Редактирование</div>
+                    <div class="chip-grid">
+                        <div class="action-chip" onclick="applyAction('ctrl-c')">Копировать<small>ctrl-c</small></div>
+                        <div class="action-chip" onclick="applyAction('ctrl-v')">Вставить<small>ctrl-v</small></div>
+                        <div class="action-chip" onclick="applyAction('ctrl-z')">Отмена<small>ctrl-z</small></div>
+                        <div class="action-chip" onclick="applyAction('win-shift-s')">Скриншот<small>win-shift-s</small></div>
+                    </div>
+                </div>
+
+                 <div class="category">
+                    <div class="category-title"><i class="fas fa-mouse"></i> Мышь (Клики)</div>
+                    <div class="chip-grid">
+                        <div class="action-chip" onclick="applyAction('click(left)')">ЛКМ</div>
+                        <div class="action-chip" onclick="applyAction('click(right)')">ПКМ</div>
+                        <div class="action-chip" onclick="applyAction('click(middle)')">Колесо (клик)</div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title"><i class="fas fa-tools"></i> Конструктор движения мыши</div>
+                    <div class="builder-box">
+                        <label style="font-size:11px; color:#aaa">Движение X / Y (-127 до 127)</label>
+                        <div class="builder-row">
+                            <input type="number" id="moveX" placeholder="X" style="width:50px" value="0">
+                            <input type="number" id="moveY" placeholder="Y" style="width:50px" value="0">
+                            <button class="btn" style="font-size:10px" onclick="buildMove()">Применить</button>
+                        </div>
+                        
+                        <label style="font-size:11px; color:#aaa; margin-top:5px; display:block">Скролл (-127 до 127)</label>
+                        <div class="builder-row">
+                            <input type="number" id="wheelVal" placeholder="Val" style="width:50px" value="1">
+                            <button class="btn" style="font-size:10px" onclick="buildWheel()">Применить</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="stage">
+            <div class="layer-selector" id="layerDots">
+                </div>
+            
+            <div class="device-case">
+                <div class="keys-grid" id="keysContainer">
+                    </div>
+
+                <div class="knob-container">
+                    <div class="knob"></div>
+                    <div class="knob-sub-btn" id="knob-ccw" onclick="selectKnob('ccw')">↺ Влево</div>
+                    <div class="knob-sub-btn" id="knob-press" onclick="selectKnob('press')">⬇ Клик</div>
+                    <div class="knob-sub-btn" id="knob-cw" onclick="selectKnob('cw')">↻ Вправо</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; color: var(--text-muted); font-size: 12px;">
+                <i class="fas fa-info-circle"></i> Выберите кнопку, затем кликните действие в библиотеке слева
+            </div>
+        </div>
+
+        <div class="panel panel-right">
+            <div class="panel-header"><i class="fas fa-sliders-h"></i> Инспектор</div>
+            <div class="prop-content">
+                
+                <div id="selectionInfo" style="text-align:center; padding: 10px; background:var(--bg-dark); border-radius:6px; border:1px solid var(--accent);">
+                    <div style="font-size:10px; color:var(--text-muted)">ВЫБРАНО</div>
+                    <div id="selectedKeyName" style="font-weight:bold; color:var(--accent)">Ничего не выбрано</div>
+                </div>
+
+                <div class="input-group">
+                    <label>Код команды (YAML Value)</label>
+                    <input type="text" id="manualInput" placeholder="Выберите кнопку...">
+                </div>
+
+                <hr style="border:0; border-top:1px solid var(--border); width:100%">
+
+                <div class="input-group">
+                    <label>Цвет подсветки (RGB)</label>
+                    <div style="display:flex; gap:10px">
+                        <input type="color" id="ledColor" style="height:40px; cursor:pointer">
+                        <div style="font-size:10px; color:#777; line-height:1.2">
+                            Настройка цвета для всех слоев сразу (аппаратное ограничение дешевых чипов)
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:auto">
+                    <label style="font-size:11px; color:#555">Предпросмотр YAML:</label>
+                    <textarea id="yamlPreview" style="width:100%; height:100px; background:#000; color:#0f0; border:none; font-family:monospace; font-size:10px; padding:5px; resize:none;" readonly></textarea>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script>
+        // --- ДАННЫЕ ---
+        const DEFAULT_CONFIG = {
+            vendor_id: 0x1189,
+            product_id: 0x8890,
+            orientation: "normal",
+            rows: 2,
+            columns: 3,
+            knobs: 1,
+            led: { type: "solid", color: [0, 120, 255], brightness: 100 },
+            layers: [
+                {
+                    buttons: [["prev", "play", "next"], ["f13", "f14", "f15"]],
+                    knobs: [{ ccw: "volumedown", press: "mute", cw: "volumeup" }]
+                }
+            ]
+        };
+
+        let config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        let currentLayer = 0;
+        let selectedItem = null; // { type: 'btn', r, c } or { type: 'knob', ktype }
+
+        // --- ИНИЦИАЛИЗАЦИЯ ---
+        function init() {
+            renderLayers();
+            renderKeys();
+            updateSelectionUI(); // ИСПРАВЛЕНО ЗДЕСЬ
+            
+            // Listeners
+            document.getElementById('manualInput').addEventListener('input', (e) => {
+                if(selectedItem) applyValue(e.target.value);
+            });
+            
+            document.getElementById('ledColor').addEventListener('input', (e) => {
+                const hex = e.target.value;
+                const r = parseInt(hex.substr(1,2), 16);
+                const g = parseInt(hex.substr(3,2), 16);
+                const b = parseInt(hex.substr(5,2), 16);
+                config.led.color = [r, g, b];
+                updateYamlPreview();
+            });
+        }
+
+        // --- РЕНДЕРИНГ ---
+        function renderLayers() {
+            const container = document.getElementById('layerDots');
+            container.innerHTML = '';
+            config.layers.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `layer-dot ${idx === currentLayer ? 'active' : ''}`;
+                dot.onclick = () => { currentLayer = idx; renderLayers(); renderKeys(); updateSelectionUI(); };
+                dot.title = `Слой ${idx+1}`;
+                container.appendChild(dot);
+            });
+            
+            // Add Layer Button
+            const addBtn = document.createElement('div');
+            addBtn.className = 'layer-dot';
+            addBtn.style.background = 'transparent';
+            addBtn.style.border = '1px dashed #555';
+            addBtn.innerHTML = '+';
+            addBtn.style.color = '#555';
+            addBtn.style.display = 'flex';
+            addBtn.style.alignItems = 'center';
+            addBtn.style.justifyContent = 'center';
+            addBtn.style.fontSize = '10px';
+            addBtn.onclick = () => {
+                // Clone layer 0 layout structure
+                const newLayer = JSON.parse(JSON.stringify(DEFAULT_CONFIG.layers[0]));
+                // Clear values
+                newLayer.buttons = [["none", "none", "none"], ["none", "none", "none"]];
+                newLayer.knobs = [{ccw: "none", press: "none", cw: "none"}];
+                config.layers.push(newLayer);
+                renderLayers();
+            };
+            container.appendChild(addBtn);
+        }
+
+        function renderKeys() {
+            const grid = document.getElementById('keysContainer');
+            grid.innerHTML = '';
+            
+            const layer = config.layers[currentLayer];
+            
+            // Buttons
+            for(let r=0; r<2; r++){
+                for(let c=0; c<3; c++){
+                    const val = layer.buttons[r][c];
+                    const el = document.createElement('div');
+                    el.className = 'key-cap';
+                    if(selectedItem && selectedItem.type === 'btn' && selectedItem.r === r && selectedItem.c === c) {
+                        el.classList.add('selected');
+                    }
+                    
+                    el.innerHTML = `
+                        <div class="key-label">Btn ${r*3 + c + 1}</div>
+                        <div class="key-value">${formatValue(val)}</div>
+                    `;
+                    el.onclick = () => selectKey(r, c);
+                    grid.appendChild(el);
+                }
+            }
+
+            // Knob Styling Update
+            const kData = layer.knobs[0];
+            updateKnobBtn('knob-ccw', 'ccw', kData.ccw);
+            updateKnobBtn('knob-press', 'press', kData.press);
+            updateKnobBtn('knob-cw', 'cw', kData.cw);
+            
+            // Color picker update
+            const rgb = config.led.color;
+            const hex = "#" + ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1);
+            document.getElementById('ledColor').value = hex;
+
+            updateYamlPreview();
+        }
+
+        function updateKnobBtn(id, type, val) {
+            const el = document.getElementById(id);
+            el.innerText = (type === 'ccw' ? '↺' : type === 'cw' ? '↻' : '⬇') + " " + formatValue(val);
+            if(selectedItem && selectedItem.type === 'knob' && selectedItem.ktype === type) {
+                el.classList.add('selected');
+            } else {
+                el.classList.remove('selected');
+            }
+        }
+
+        function formatValue(val) {
+            if(!val) return 'none';
+            if(val.length > 8) return val.substring(0,6) + '..';
+            return val;
+        }
+
+        // --- ЛОГИКА ---
+        function selectKey(r, c) {
+            selectedItem = { type: 'btn', r, c };
+            updateSelectionUI();
+            renderKeys();
+        }
+
+        function selectKnob(ktype) {
+            selectedItem = { type: 'knob', ktype };
+            updateSelectionUI();
+            renderKeys();
+        }
+
+        function updateSelectionUI() {
+            const title = document.getElementById('selectedKeyName');
+            const input = document.getElementById('manualInput');
+            
+            if(!selectedItem) {
+                title.innerText = "Ничего не выбрано";
+                title.style.color = "#555";
+                input.value = "";
+                return;
+            }
+
+            const layer = config.layers[currentLayer];
+            let val = "";
+
+            if(selectedItem.type === 'btn') {
+                title.innerText = `Кнопка ${selectedItem.r*3 + selectedItem.c + 1} (Слой ${currentLayer+1})`;
+                val = layer.buttons[selectedItem.r][selectedItem.c];
+            } else {
+                const map = { ccw: "Влево", cw: "Вправо", press: "Нажатие" };
+                title.innerText = `Крутилка: ${map[selectedItem.ktype]} (Слой ${currentLayer+1})`;
+                val = layer.knobs[0][selectedItem.ktype];
+            }
+            
+            title.style.color = "var(--accent)";
+            input.value = val;
+            input.focus();
+        }
+
+        function applyAction(actionCode) {
+            if(!selectedItem) {
+                alert("Сначала выберите кнопку на клавиатуре (по центру экрана)");
+                return;
+            }
+            applyValue(actionCode);
+        }
+
+        function applyValue(val) {
+            const layer = config.layers[currentLayer];
+            if(selectedItem.type === 'btn') {
+                layer.buttons[selectedItem.r][selectedItem.c] = val;
+            } else {
+                layer.knobs[0][selectedItem.ktype] = val;
+            }
+            document.getElementById('manualInput').value = val;
+            renderKeys();
+        }
+
+        // Builders
+        function buildMove() {
+            const x = document.getElementById('moveX').value;
+            const y = document.getElementById('moveY').value;
+            applyAction(`move(${x},${y})`);
+        }
+        function buildWheel() {
+            const v = document.getElementById('wheelVal').value;
+            applyAction(`wheel(${v})`);
+        }
+
+        // --- ФАЙЛЫ ---
+        function updateYamlPreview() {
+            try {
+                const y = jsyaml.dump(config, { lineWidth: -1 });
+                document.getElementById('yamlPreview').value = y;
+            } catch(e) {}
+        }
+
+        function downloadConfig() {
+            const y = document.getElementById('yamlPreview').value;
+            const blob = new Blob([y], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vorotex_pro.yaml';
+            a.click();
+        }
+
+        function importConfig() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileLoad(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loaded = jsyaml.load(e.target.result);
+                    if(loaded.layers) {
+                        config = loaded;
+                        currentLayer = 0;
+                        renderLayers();
+                        renderKeys();
+                    }
+                } catch(err) { alert("Ошибка YAML: " + err); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
