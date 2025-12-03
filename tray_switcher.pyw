@@ -11,7 +11,8 @@ TOOL_NAME = "ch57x-keyboard-tool.exe"  # Имя программы-прошив�
 PROFILES = [
     ("Работа", "work.yaml"),
     ("Стрелки", "arrows.yaml"),
-    ("Медиа", "media.yaml")
+    ("Медиа", "media.yaml"),
+    ("PS", "PS.yaml")
 ]
 # -----------------
 

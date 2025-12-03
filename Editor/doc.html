@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH57x Macro Configurator</title>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --sidebar-width: 280px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            height: 100vh;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .nav-group { margin-bottom: 2rem; }
+        .nav-header {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            opacity: 0.7;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            margin: 0.2rem 0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .nav-link.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+
+        /* --- Main Content --- */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 4rem 5rem;
+            max-width: 1200px;
+        }
+
+        /* --- Headers & Typography --- */
+        h1 { font-size: 2.5rem; margin-bottom: 1.5rem; color: white; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        h2 { font-size: 1.8rem; margin: 3.5rem 0 1.5rem 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+        h3 { font-size: 1.3rem; margin: 2.5rem 0 1rem 0; color: var(--text-main); font-weight: 600; }
+        h4 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem 0; color: white; }
+        p { margin-bottom: 1rem; color: var(--text-muted); max-width: 800px; }
+        a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); transition: 0.2s; }
+        a:hover { color: #60a5fa; border-bottom-style: solid; }
+
+        /* --- Keycaps Styling --- */
+        kbd {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-bottom: 3px solid #0f172a; /* Darker shadow */
+            border-radius: 6px;
+            padding: 0.2rem 0.6rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--accent);
+            display: inline-block;
+            margin: 0 3px;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+            font-weight: 600;
+        }
+
+        /* --- Code Blocks --- */
+        pre {
+            background: #020617;
+            padding: 1.25rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            color: #e2e8f0;
+            font-size: 0.9em;
+        }
+        code { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- Tables --- */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        th { 
+            background-color: rgba(0,0,0,0.3); 
+            text-align: left; 
+            padding: 1rem; 
+            color: white; 
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+        td { 
+            padding: 1rem; 
+            border-bottom: 1px solid var(--border); 
+            color: var(--text-muted); 
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(255,255,255,0.02); }
+
+        /* --- Language Switcher --- */
+        .lang-switch {
+            position: fixed;
+            top: 2rem;
+            right: 3rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.25rem;
+            display: flex;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .lang-btn.active {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* --- Lists --- */
+        ul { list-style: none; padding-left: 0.5rem; margin-bottom: 1.5rem; }
+        li { margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative; color: var(--text-muted); }
+        li::before {
+            content: "▹";
+            color: var(--accent);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        /* --- Cards/Notes --- */
+        .info-card {
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 2rem 0;
+            color: #bfdbfe;
+        }
+        .info-card strong { color: white; display: block; margin-bottom: 0.5rem; }
+
+        .warning-card {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 4px solid var(--danger);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 2rem 0;
+            color: #fca5a5;
+        }
+        .warning-card strong { color: #fee2e2; display: block; margin-bottom: 0.5rem; }
+
+        /* Language Utility Classes */
+        [data-lang="ru"] { display: none; }
+        
+        /* Mobile */
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; width: 100%; padding-top: 5rem; }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; padding: 2rem; width: 100%; }
+            .lang-switch { top: 1rem; right: 1rem; }
+            
+            /* Hamburger placeholder */
+            .menu-toggle { display: block; position: fixed; top: 1rem; left: 1rem; z-index: 101; background: var(--bg-panel); padding: 0.5rem; border-radius: 5px; border: 1px solid var(--border); color: white; }
+        }
+        @media (min-width: 901px) { .menu-toggle { display: none; } }
+                .brand a {
+                color: var(--bg-dark);
+    padding: 10px;
+    border-radius: 50px;
+    background: var(--accent);
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    display: flex;
+    text-decoration: none;
+    align-items: center;
+    justify-content: center;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ru')">RU</button>
+    </div>
+
+    <nav class="sidebar">
+        <div class="brand">
+            <a href="index.html"><i class="fa-solid fa-chevron-left"></i></a>
+            <span>CH57x</span> <span style="font-weight: 300; color: var(--text-muted)">Actions</span>
+        </div>
+        
+        <div class="nav-group">
+            <div class="nav-header">Documentation</div>
+            <a href="#overview" class="nav-link"><span data-lang="en">Overview</span><span data-lang="ru">Обзор</span></a>
+            <a href="#keyboard-actions" class="nav-link"><span data-lang="en">Keyboard Actions</span><span data-lang="ru">Действия Клавиатуры</span></a>
+            <a href="#mouse-actions" class="nav-link"><span data-lang="en">Mouse Actions</span><span data-lang="ru">Действия Мыши</span></a>
+            <a href="#media-keys" class="nav-link"><span data-lang="en">Media Keys</span><span data-lang="ru">Медиа Клавиши</span></a>
+            <a href="#notes" class="nav-link"><span data-lang="en">Notes & Help</span><span data-lang="ru">Заметки и Помощь</span></a>
+        </div>
+    </nav>
+
+    <main class="main">
+        
+        <section id="header">
+            <h1>
+                <span data-lang="en">Available Actions</span>
+                <span data-lang="ru">Доступные Действия</span>
+            </h1>
+            <p>
+                <span data-lang="en">This document describes all available actions that can be assigned to keys and knobs on CH57x macro keyboards.</span>
+                <span data-lang="ru">Этот документ описывает все доступные действия, которые могут быть назначены на клавиши и ручки макро-клавиатур CH57x.</span>
+            </p>
+        </section>
+
+        <section id="overview">
+            <h2>
+                <span data-lang="en">Overview</span>
+                <span data-lang="ru">Обзор</span>
+            </h2>
+            <p>
+                <span data-lang="en">Each key or knob on your macro keyboard can be programmed to perform different actions. Actions are defined in the YAML configuration file and can be:</span>
+                <span data-lang="ru">Каждая клавиша или ручка может быть запрограммирована на выполнение различных действий. Действия определяются в конфигурационном файле YAML и могут быть:</span>
+            </p>
+            <ul>
+                <li>
+                    <span data-lang="en"><strong>Keyboard actions</strong>: emulate keypresses, key combinations, and sequences</span>
+                    <span data-lang="ru"><strong>Действия клавиатуры</strong>: эмуляция нажатий, комбинаций и последовательностей</span>
+                </li>
+                <li>
+                    <span data-lang="en"><strong>Mouse actions</strong>: control mouse movement, clicks, and scrolling</span>
+                    <span data-lang="ru"><strong>Действия мыши</strong>: управление движением, кликами и прокруткой</span>
+                </li>
+                <li>
+                    <span data-lang="en"><strong>Media keys</strong>: control media playback and system functions</span>
+                    <span data-lang="ru"><strong>Медиа клавиши</strong>: управление воспроизведением и системными функциями</span>
+                </li>
+            </ul>
+        </section>
+
+        <section id="keyboard-actions">
+            <h2>
+                <span data-lang="en">Keyboard Actions</span>
+                <span data-lang="ru">Действия Клавиатуры</span>
+            </h2>
+
+            <h3>
+                <span data-lang="en">Simple Keys</span>
+                <span data-lang="ru">Простые клавиши</span>
+            </h3>
+            <p>
+                <span data-lang="en">Press a single key without modifiers:</span>
+                <span data-lang="ru">Нажатие одной клавиши без модификаторов:</span>
+            </p>
+            <ul>
+                <li><kbd>a</kbd> — <span data-lang="en">'A letter' key (see note below)</span><span data-lang="ru">клавиша 'A' (см. примечание ниже)</span></li>
+                <li><kbd>slash</kbd> — <span data-lang="en">'/' key</span><span data-lang="ru">клавиша '/'</span></li>
+                <li><kbd>enter</kbd></li>
+                <li><kbd>esc</kbd></li>
+                <li><kbd>space</kbd></li>
+                <li><kbd>f1</kbd></li>
+            </ul>
+
+            <p>
+                <span data-lang="en">To see a complete list of supported key names, run:</span>
+                <span data-lang="ru">Чтобы увидеть полный список поддерживаемых имен клавиш, запустите:</span>
+            </p>
+            <pre><code>./ch57x-keyboard-tool show-keys</code></pre>
+            
+            <h4>HID Codes</h4>
+            <p>
+                <span data-lang="en">It is also possible to emulate press of key for which no name is given, use HID code in angle brackets like this:</span>
+                <span data-lang="ru">Также возможно эмулировать нажатие клавиши, для которой нет имени, используя HID-код в угловых скобках:</span>
+            </p>
+            <ul>
+                <li><kbd>&lt;101&gt;</kbd></li>
+            </ul>
+            <p>
+                <span data-lang="en">See <a href="https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf" target="_blank">USB HID Usage Tables</a> (section 10) for HID usage code list.</span>
+                <span data-lang="ru">См. <a href="https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf" target="_blank">Таблицы использования USB HID</a> (раздел 10) для списка кодов.</span>
+            </p>
+            
+            <div class="warning-card">
+                <strong>Important / Важно</strong>
+                <span data-lang="en">When you use letters, you specify <em>key</em> to press, not <em>character</em> to produce. If you use keyboard layout other than QWERTY, pressing 'a' key may in fact produce another character, not 'a'.</span>
+                <span data-lang="ru">При использовании букв вы указываете <em>клавишу</em> для нажатия, а не <em>символ</em>. Если вы используете раскладку отличную от QWERTY, нажатие клавиши 'a' может произвести другой символ.</span>
+            </div>
+
+            <h3>
+                <span data-lang="en">Key Combinations</span>
+                <span data-lang="ru">Комбинации клавиш</span>
+            </h3>
+            <p>
+                <span data-lang="en">Use modifiers with keys by joining them with a hyphen (<code>-</code>):</span>
+                <span data-lang="ru">Используйте модификаторы с клавишами, соединяя их дефисом (<code>-</code>):</span>
+            </p>
+            <ul>
+                <li><kbd>ctrl-c</kbd></li>
+                <li><kbd>cmd-v</kbd></li>
+                <li><kbd>alt-tab</kbd></li>
+                <li><kbd>shift-a</kbd></li>
+                <li><kbd>ctrl-alt-del</kbd></li>
+            </ul>
+
+            <h3>
+                <span data-lang="en">Modifiers</span>
+                <span data-lang="ru">Модификаторы</span>
+            </h3>
+            <p><span data-lang="en">You can combine multiple modifiers:</span><span data-lang="ru">Можно комбинировать несколько модификаторов:</span> <kbd>ctrl-shift-a</kbd>, <kbd>cmd-alt-esc</kbd>.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modifier</th>
+                        <th>Aliases</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><kbd>ctrl</kbd></td><td>-</td><td>Control key</td></tr>
+                    <tr><td><kbd>rctrl</kbd></td><td>-</td><td>Right Control</td></tr>
+                    <tr><td><kbd>shift</kbd></td><td>-</td><td>Shift key</td></tr>
+                    <tr><td><kbd>rshift</kbd></td><td>-</td><td>Right Shift</td></tr>
+                    <tr><td><kbd>alt</kbd></td><td><kbd>opt</kbd></td><td>Alt (Win/Lin) / Option (macOS)</td></tr>
+                    <tr><td><kbd>ralt</kbd></td><td><kbd>ropt</kbd></td><td>Right Alt / Right Option</td></tr>
+                    <tr><td><kbd>win</kbd></td><td><kbd>cmd</kbd></td><td>Windows / Command (macOS)</td></tr>
+                    <tr><td><kbd>rwin</kbd></td><td><kbd>rcmd</kbd></td><td>Right Windows / Right Command</td></tr>
+                </tbody>
+            </table>
+
+            <h3>
+                <span data-lang="en">Key Sequences (Chords)</span>
+                <span data-lang="ru">Последовательности (Аккорды)</span>
+            </h3>
+            <p>
+                <span data-lang="en">Execute multiple key presses in sequence by separating them with commas (<code>,</code>). Up to five combinations may be used:</span>
+                <span data-lang="ru">Выполнение нескольких нажатий последовательно, разделяя их запятыми (<code>,</code>). Можно использовать до 5 комбинаций:</span>
+            </p>
+            <ul>
+                <li><kbd>h,e,l,l,o</kbd> — <span data-lang="en">types "hello"</span><span data-lang="ru">печатает "hello"</span></li>
+                <li><kbd>ctrl-a,ctrl-c</kbd> — <span data-lang="en">select all, then copy</span><span data-lang="ru">выделить всё, затем копировать</span></li>
+                <li><kbd>win-r,c,m,d,enter</kbd> — <span data-lang="en">open Run dialog and type "cmd"</span><span data-lang="ru">открыть "Выполнить" и ввести "cmd"</span></li>
+            </ul>
+            <div class="info-card">
+                <strong>Note for 3x1 keyboards / Заметка для 3x1</strong>
+                <span data-lang="en">Key modifiers are only supported for the first key in a sequence. You can use <code>ctrl-alt-del,1,2</code> but not <code>ctrl-alt-del,alt-1,2</code>.</span>
+                <span data-lang="ru">Модификаторы клавиш поддерживаются только для первой клавиши в последовательности. Вы можете использовать <code>ctrl-alt-del,1,2</code>, но не <code>ctrl-alt-del,alt-1,2</code>.</span>
+            </div>
+        </section>
+
+        <section id="mouse-actions">
+            <h2>
+                <span data-lang="en">Mouse Actions</span>
+                <span data-lang="ru">Действия Мыши</span>
+            </h2>
+            <p>
+                <span data-lang="en">Mouse actions allow you to control the mouse cursor and buttons directly. Supported buttons: <kbd>left</kbd>, <kbd>right</kbd>, <kbd>middle</kbd>. Combination: <kbd>left+right</kbd>.</span>
+                <span data-lang="ru">Позволяют управлять курсором и кнопками. Кнопки: <kbd>left</kbd>, <kbd>right</kbd>, <kbd>middle</kbd>. Комбинация: <kbd>left+right</kbd>.</span>
+            </p>
+            <p>
+                <span data-lang="en">Supported modifiers: <kbd>ctrl</kbd>, <kbd>shift</kbd>, <kbd>alt</kbd>.</span>
+                <span data-lang="ru">Модификаторы: <kbd>ctrl</kbd>, <kbd>shift</kbd>, <kbd>alt</kbd>.</span>
+            </p>
+            <div class="warning-card">
+                <strong>Note / Примечание</strong>
+                <span data-lang="en">Unlike keyboard actions, mouse actions only support these three modifiers (no Win/Cmd key).</span>
+                <span data-lang="ru">В отличие от клавиш клавиатуры, действия мыши поддерживают только три модификатора (без клавиши Win/Cmd).</span>
+            </div>
+
+            <h3>
+                <span data-lang="en">Mouse Click</span>
+                <span data-lang="ru">Клик Мыши</span>
+            </h3>
+            <ul>
+                <li><kbd>click(left)</kbd> — <span data-lang="en">left button click</span><span data-lang="ru">левый клик</span></li>
+                <li><kbd>click(left+right)</kbd> — <span data-lang="en">two buttons click</span><span data-lang="ru">клик двумя кнопками</span></li>
+                <li><kbd>ctrl-click(left)</kbd> — <span data-lang="en">modifier click</span><span data-lang="ru">клик с модификатором</span></li>
+                <li><kbd>shift-click(right)</kbd></li>
+            </ul>
+            <p><strong>Aliases:</strong> <kbd>click</kbd> (left), <kbd>rclick</kbd> (right), <kbd>mclick</kbd> (middle).</p>
+
+            <h3>
+                <span data-lang="en">Mouse Move</span>
+                <span data-lang="ru">Движение Мыши</span>
+            </h3>
+            <p>
+                <span data-lang="en">Move cursor by relative offset. Range: <strong>-128 to 127 pixels</strong> in each direction.</span>
+                <span data-lang="ru">Сдвиг курсора относительно. Диапазон: <strong>-128 до 127 пикселей</strong> в каждом направлении.</span>
+            </p>
+            <ul>
+                <li><kbd>move(10,0)</kbd> — <span data-lang="en">10 pixels right</span><span data-lang="ru">10 пикселей вправо</span></li>
+                <li><kbd>move(-10,0)</kbd> — <span data-lang="en">10 pixels left</span><span data-lang="ru">10 пикселей влево</span></li>
+                <li><kbd>move(0,10)</kbd> — <span data-lang="en">10 pixels down</span><span data-lang="ru">10 пикселей вниз</span></li>
+                <li><kbd>move(5,5)</kbd> — <span data-lang="en">5 right and 5 down</span><span data-lang="ru">5 вправо и 5 вниз</span></li>
+                <li><kbd>ctrl-move(10,5)</kbd> — <span data-lang="en">move holding Ctrl</span><span data-lang="ru">движение с зажатым Ctrl</span></li>
+            </ul>
+
+            <h3>
+                <span data-lang="en">Mouse Drag</span>
+                <span data-lang="ru">Перетаскивание (Drag)</span>
+            </h3>
+            <p>
+                <span data-lang="en">Drag with mouse buttons pressed:</span>
+                <span data-lang="ru">Перетаскивание с зажатыми кнопками:</span>
+            </p>
+            <ul>
+                <li><kbd>drag(left,10,0)</kbd> — <span data-lang="en">drag 10px right with left button</span><span data-lang="ru">тянуть 10px вправо левой кнопкой</span></li>
+                <li><kbd>drag(right,-5,5)</kbd> — <span data-lang="en">drag with right button</span><span data-lang="ru">тянуть правой кнопкой</span></li>
+                <li><kbd>drag(left+right,0,10)</kbd></li>
+                <li><kbd>shift-drag(left,10,10)</kbd></li>
+            </ul>
+
+            <h3>
+                <span data-lang="en">Mouse Wheel</span>
+                <span data-lang="ru">Колесо Мыши</span>
+            </h3>
+            <p>
+                <span data-lang="en">Rotate the mouse wheel. Range: <strong>-128 to 127</strong>.</span>
+                <span data-lang="ru">Вращение колеса. Диапазон: <strong>-128 до 127</strong>.</span>
+            </p>
+            <ul>
+                <li><kbd>wheel(1)</kbd> — <span data-lang="en">rotate up by 1 unit</span><span data-lang="ru">на 1 единицу вверх</span></li>
+                <li><kbd>wheel(-1)</kbd> — <span data-lang="en">rotate down by 1 unit</span><span data-lang="ru">на 1 единицу вниз</span></li>
+                <li><kbd>wheel(3)</kbd></li>
+                <li><kbd>ctrl-wheel(1)</kbd> — <span data-lang="en">rotate holding Ctrl (zooms)</span><span data-lang="ru">с Ctrl (зум)</span></li>
+            </ul>
+            <div class="info-card">
+                <strong>Note / Примечание</strong>
+                <span data-lang="en">Unit given to <em>wheel</em> action doesn't correspond to anything, it is neither line nor pixel. And it is also not linear: <em>wheel(100)</em> scrolls just 3 times more than <em>wheel(1)</em>.</span>
+                <span data-lang="ru">Единица в действии <em>wheel</em> не соответствует ни строкам, ни пикселям. Шкала нелинейна: <em>wheel(100)</em> прокручивает лишь в 3 раза больше, чем <em>wheel(1)</em>.</span>
+            </div>
+            <p><strong>Aliases:</strong> <kbd>wheelup</kbd> is <kbd>wheel(1)</kbd>, <kbd>wheeldown</kbd> is <kbd>wheel(-1)</kbd>.</p>
+        </section>
+
+        <section id="media-keys">
+            <h2>
+                <span data-lang="en">Media Keys</span>
+                <span data-lang="ru">Медиа Клавиши</span>
+            </h2>
+            <p>
+                <span data-lang="en">Control media playback and system functions:</span>
+                <span data-lang="ru">Управление медиа и системными функциями:</span>
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><kbd>next</kbd></td><td>Next track</td></tr>
+                    <tr><td><kbd>previous</kbd> / <kbd>prev</kbd></td><td>Previous track</td></tr>
+                    <tr><td><kbd>stop</kbd></td><td>Stop playback</td></tr>
+                    <tr><td><kbd>play</kbd></td><td>Play/Pause</td></tr>
+                    <tr><td><kbd>mute</kbd></td><td>Mute audio</td></tr>
+                    <tr><td><kbd>volumeup</kbd></td><td>Increase volume</td></tr>
+                    <tr><td><kbd>volumedown</kbd></td><td>Decrease volume</td></tr>
+                    <tr><td><kbd>favorites</kbd></td><td>Open favorites</td></tr>
+                    <tr><td><kbd>calculator</kbd></td><td>Open calculator</td></tr>
+                    <tr><td><kbd>screenlock</kbd></td><td>Lock screen</td></tr>
+                </tbody>
+            </table>
+            <p>
+                <span data-lang="en">Example:</span><span data-lang="ru">Пример:</span>
+                <kbd>play</kbd>, <kbd>volumeup</kbd>, <kbd>next</kbd>
+            </p>
+        </section>
+
+        <section id="notes">
+            <h2>
+                <span data-lang="en">Notes & Help</span>
+                <span data-lang="ru">Заметки и Помощь</span>
+            </h2>
+            
+            <h3>
+                <span data-lang="en">Custom Keyboard Layouts</span>
+                <span data-lang="ru">Пользовательские Раскладки</span>
+            </h3>
+            <p>
+                <span data-lang="en">When using custom keyboard layouts (like Dvorak), you must specify the key as it appears on a QWERTY layout, not the character it produces. The keyboard emulates physical key presses, not character input.</span>
+                <span data-lang="ru">При использовании кастомных раскладок (например, Дворак), указывайте клавишу так, как она выглядит на QWERTY. Клавиатура эмулирует физическое нажатие клавиши, а не ввод символа.</span>
+            </p>
+
+            <h3>
+                <span data-lang="en">Getting Help</span>
+                <span data-lang="ru">Получение помощи</span>
+            </h3>
+            <ul>
+                <li>
+                    <span data-lang="en">Run to see all supported key names:</span>
+                    <span data-lang="ru">Запустите, чтобы увидеть все имена клавиш:</span>
+                    <br><kbd>./ch57x-keyboard-tool show-keys</kbd>
+                </li>
+                <li>
+                    <span data-lang="en">Run to check your configuration:</span>
+                    <span data-lang="ru">Запустите для проверки конфигурации:</span>
+                    <br><kbd>./ch57x-keyboard-tool validate your-config.yaml</kbd>
+                </li>
+                <li>
+                    <span data-lang="en">See <code>example-mapping.yaml</code> for a complete configuration example.</span>
+                    <span data-lang="ru">См. <code>example-mapping.yaml</code> для полного примера конфигурации.</span>
+                </li>
+            </ul>
+        </section>
+
+    </main>
+
+    <script>
+        function setLang(lang) {
+            // Update buttons styling
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Hide/Show elements based on lang attribute
+            const enElements = document.querySelectorAll('[data-lang="en"]');
+            const ruElements = document.querySelectorAll('[data-lang="ru"]');
+
+            if (lang === 'ru') {
+                enElements.forEach(el => el.style.display = 'none');
+                ruElements.forEach(el => el.style.display = 'inline');
+            } else {
+                ruElements.forEach(el => el.style.display = 'none');
+                enElements.forEach(el => el.style.display = 'inline');
+            }
+        }
+    </script>
+</body>
+</html>

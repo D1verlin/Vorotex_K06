@@ -13,13 +13,13 @@ led:
   brightness: 100
 layers:
   - buttons:
-      - - q
-        - up
-        - win
-      - - left
-        - down
-        - right
+      - - A
+        - J
+        - B
+      - - W
+        - E
+        - T
     knobs:
-      - ccw: wheel(2)
-        press: click(left)
-        cw: wheel(-2)
+      - ccw: leftbracket
+        press: f18
+        cw: rightbracket
